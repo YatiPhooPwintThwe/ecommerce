@@ -24,12 +24,14 @@ export default function GiftCouponCard({ onChanged }) {
 
       // success
       toast.success(`${r.discountPercentage}% off applied`);
+      const existing = client.readQuery({ query: GET_MY_COUPON })?.myCoupon;
       // prime cache so totals update instantly
       client.writeQuery({
         query: GET_MY_COUPON,
         data: {
           myCoupon: {
             __typename: "Coupon",
+            _id: existing?._id ?? "temp",
             code: r.code,
             discountPercentage: r.discountPercentage,
             redeemed: false,
