@@ -11,8 +11,11 @@ import {
 import "./index.css";
 import App from "./App.jsx";
 
+// frontend/src/main.jsx
+const GRAPHQL_URI = import.meta.env.VITE_GRAPHQL_URI || "/graphql";
+
 const httpLink = createHttpLink({
-  uri: `/graphql`,
+  uri: GRAPHQL_URI,
   credentials: "include",
 });
 

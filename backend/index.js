@@ -1,4 +1,4 @@
-// index.js
+// backend/index.js
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -14,7 +14,7 @@ import MongoStore from "connect-mongo";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// app imports
+// app modules
 import { connectDB } from "./lib/connectDB.js";
 import { configurePassport } from "./passport/passport.config.js";
 import mergedTypeDefs from "./typeDefs/index.js";
@@ -24,25 +24,24 @@ import { createDefaultAdmin } from "./admin/createDefaultAdmin.js";
 dotenv.config();
 await connectDB();
 
+
 const isProd = process.env.NODE_ENV === "production";
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 4000; // Render provides PORT
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:3000";
 
-// sanity checks (optional)
+
 if (!process.env.MONGODB_URI) throw new Error("Missing MONGODB_URI");
 if (!process.env.SESSION_SECRET) throw new Error("Missing SESSION_SECRET");
 
+// ------------------ express & http ------------------
 const app = express();
 const httpServer = http.createServer(app);
 
-// trust proxy when deploying behind a proxy (for secure cookies)
+// when behind Render's proxy and using secure cookies
 if (isProd) app.set("trust proxy", 1);
 
-// CORS
-const allowedOrigins = isProd
-  ? [CLIENT_URL]
-  : [CLIENT_URL, "http://localhost:5173"];
 
+const allowedOrigins = isProd ? true : [CLIENT_URL, "http://localhost:5173"];
 app.use(
   cors({
     origin: allowedOrigins,
@@ -50,7 +49,7 @@ app.use(
   })
 );
 
-// Sessions
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
@@ -58,10 +57,10 @@ app.use(
     saveUninitialized: false,
     rolling: true,
     cookie: {
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       httpOnly: true,
-      sameSite: "lax",
-      secure: isProd,
+      sameSite: isProd ? "lax" : "lax", // same-origin deploy -> "lax" is fine
+      secure: isProd, // HTTPS on Render
       path: "/",
     },
     store: MongoStore.create({
@@ -71,16 +70,14 @@ app.use(
   })
 );
 
-// Passport
+// ------------------ passport ------------------
 configurePassport();
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Apollo (no Disabled plugin needed)
+// ------------------ apollo server ------------------
 const plugins = [ApolloServerPluginDrainHttpServer({ httpServer })];
-if (!isProd) {
-  plugins.push(ApolloServerPluginLandingPageLocalDefault({ embed: true }));
-}
+if (!isProd) plugins.push(ApolloServerPluginLandingPageLocalDefault({ embed: true }));
 
 const server = new ApolloServer({
   typeDefs: mergedTypeDefs,
@@ -89,9 +86,9 @@ const server = new ApolloServer({
 });
 
 await server.start();
-await createDefaultAdmin();
+await createDefaultAdmin(); // will create/update admin on boot
 
-// Larger body limits for uploads/base64
+// Larger body limits (e.g., base64 images)
 app.use(
   "/graphql",
   express.json({ limit: "15mb" }),
@@ -101,21 +98,26 @@ app.use(
   })
 );
 
-// Static frontend in production (optional)
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+
+const distDir = path.resolve(__dirname, "../frontend/dist");
+
 if (isProd) {
-  app.use(express.static(path.join(__dirname, "frontend/dist")));
+  app.use(express.static(distDir));
+  // Let React Router handle the rest
   app.get("*", (_req, res) => {
-    res.sendFile(path.join(__dirname, "frontend/dist", "index.html"));
+    res.sendFile(path.join(distDir, "index.html"));
   });
 }
 
-// Start
+
 await new Promise((resolve) => httpServer.listen({ port: PORT }, resolve));
 
-console.log(`NODE_ENV    : ${process.env.NODE_ENV || "(not set)"}`);
-console.log(`Client URL  : ${CLIENT_URL}`);
-console.log(`Origins     : ${allowedOrigins.join(", ")}`);
-console.log(`GraphQL     : http://localhost:${PORT}/graphql`);
+
+console.log(`NODE_ENV   : ${process.env.NODE_ENV || "(not set)"}`);
+console.log(`GraphQL    : http://localhost:${PORT}/graphql`);
+console.log(`Serving    : ${isProd ? distDir : "development (no static)"} `);
+
