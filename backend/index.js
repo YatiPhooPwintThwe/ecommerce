@@ -26,6 +26,7 @@ dotenv.config();
 await connectDB();
 
 
+
 const isProd = process.env.NODE_ENV === "production";
 const PORT = process.env.PORT || 4000; // Render provides PORT
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:3000";

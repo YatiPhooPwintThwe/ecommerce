@@ -8,6 +8,20 @@ import { useNavigate } from "react-router-dom";
 const sgd = (n) =>
   new Intl.NumberFormat("en-SG", { style: "currency", currency: "SGD" }).format(Number(n || 0));
 
+const formatDate = (dateString) => {
+  if (!dateString) return "Date not available";
+  const d = new Date(dateString);
+  return isNaN(d.getTime())
+    ? "Date not available"
+    : d.toLocaleString("en-SG", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+};
+
 export default function AdminOrdersPage() {
   const navigate = useNavigate();
   const { data, loading, error, refetch } = useQuery(GET_ADMIN_ORDERS, {
@@ -17,7 +31,6 @@ export default function AdminOrdersPage() {
   const [etaDays, setEtaDays] = useState(7);
 
   const [dispatchOrder, { loading: saving }] = useMutation(DISPATCH_ORDER, {
-    // optimistic UI so the status flips instantly
     optimisticResponse: ({ orderId, etaDays }) => ({
       dispatchOrder: {
         __typename: "DispatchOrderResult",
@@ -35,16 +48,13 @@ export default function AdminOrdersPage() {
     update(cache, { data: res }) {
       const updated = res?.dispatchOrder?.order;
       if (!updated?._id) return;
-      // Merge updated fields into the order in the adminOrders list
       const existing = cache.readQuery({ query: GET_ADMIN_ORDERS });
       if (!existing?.adminOrders) return;
       cache.writeQuery({
         query: GET_ADMIN_ORDERS,
         data: {
           adminOrders: existing.adminOrders.map((o) =>
-            o._id === updated._id
-              ? { ...o, ...updated }
-              : o
+            o._id === updated._id ? { ...o, ...updated } : o
           ),
         },
       });
@@ -52,7 +62,6 @@ export default function AdminOrdersPage() {
     onCompleted: (r) => {
       if (r?.dispatchOrder?.success) {
         toast.success(r.dispatchOrder.message || "Order dispatched");
-        // optional: still refetch to be 100% consistent with server
         refetch();
       } else {
         toast.error(r?.dispatchOrder?.message || "Failed to dispatch");
@@ -95,27 +104,32 @@ export default function AdminOrdersPage() {
           {orders.map((o) => {
             const isPending = o.fulfillmentStatus === "pending";
             const isDispatched = o.fulfillmentStatus === "dispatched";
+
             return (
               <div key={o._id} className="rounded-lg border bg-white p-5 shadow-sm">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="font-semibold">Order #{o._id.slice(-6)}</div>
-                  <div className="text-sm text-gray-500">
-                    {new Date(o.createdAt).toLocaleString("en-SG")}
-                  </div>
+                  {/* header right timestamp */}
+                  <div className="text-sm text-gray-500">{formatDate(o.createdAt)}</div>
                 </div>
 
+                {/* details */}
                 <div className="mt-2 text-sm text-gray-700">
-                  <div>User: {o.user?.name} · {o.user?.email}</div>
                   <div>
-                    Ship to: {o.user?.address?.postalCode || "-"}, {o.user?.address?.country || "-"}
+                    User: {o.user?.name} · {o.user?.email}
                   </div>
-                  <div>Status: <b className="capitalize">{o.fulfillmentStatus}</b></div>
-                  {o.dispatchedAt && (
+                  <div>
+                    Ship to: {o.user?.address?.postalCode || "-"},{" "}
+                    {o.user?.address?.country || "-"}
+                  </div>
+                  <div>
+                    Status: <b className="capitalize">{o.fulfillmentStatus}</b>
+                  </div>
+
+                  {isDispatched && (
                     <div>
-                      Dispatched: {new Date(o.dispatchedAt).toLocaleDateString("en-SG")} · ETA:{" "}
-                      {o.estimatedDeliveryDate
-                        ? new Date(o.estimatedDeliveryDate).toLocaleDateString("en-SG")
-                        : "-"}
+                      Dispatched: {formatDate(o.dispatchedAt)} · ETA:{" "}
+                      {formatDate(o.estimatedDeliveryDate)}
                     </div>
                   )}
                 </div>
@@ -134,7 +148,9 @@ export default function AdminOrdersPage() {
                         <div className="font-medium">{it.product?.name}</div>
                         <div className="text-sm text-gray-500">× {it.quantity}</div>
                       </div>
-                      <div className="text-sm">{sgd((it.price || 0) * (it.quantity || 0))}</div>
+                      <div className="text-sm">
+                        {sgd((it.price || 0) * (it.quantity || 0))}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -159,12 +175,14 @@ export default function AdminOrdersPage() {
           })}
         </div>
       )}
+
+      {/* back button bottom-left with spacing */}
       <div className="pt-8">
         <button
           onClick={() => navigate("/admin/products")}
           className="px-6 py-2 bg-blue-400 text-white rounded-lg hover:bg-blue-500 text-sm shadow"
         >
-          Back 
+          Back
         </button>
       </div>
     </div>

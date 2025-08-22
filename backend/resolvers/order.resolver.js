@@ -14,9 +14,7 @@ const badInput = (m = "Bad input") => {
   throw new GraphQLError(m, { extensions: { code: "BAD_USER_INPUT" } });
 };
 const serverErr = (m = "Server error", detail) => {
-  throw new GraphQLError(m, {
-    extensions: { code: "INTERNAL_SERVER_ERROR", detail },
-  });
+  throw new GraphQLError(m, { extensions: { code: "INTERNAL_SERVER_ERROR", detail } });
 };
 
 // Cache Stripe percent_off coupons to avoid duplicates
@@ -27,6 +25,11 @@ async function getOrCreateStripePercentCoupon(percent) {
   stripeCouponCache.set(percent, c.id);
   return c.id;
 }
+
+// Constants for fees
+const SHIPPING_FEE_CENTS = 200; // $2
+const GST_FEE_CENTS = 100;      // $1
+const FEE_NAMES = new Set(["Shipping Fee", "GST"]);
 
 export const orderResolvers = {
   // ---------------------- QUERIES ----------------------
@@ -70,11 +73,6 @@ export const orderResolvers = {
 
   // --------------------- MUTATIONS ---------------------
   Mutation: {
-    /**
-     * Create Stripe Checkout Session.
-     * products: [{ _id, quantity }]
-     * couponCode: optional
-     */
     checkout: async (_, { products, couponCode }, ctx) => {
       const user = await ctx.getUser();
       if (!user) unauth();
@@ -100,7 +98,7 @@ export const orderResolvers = {
         badInput("One or more products not found");
       }
 
-      // Build Stripe line items & compute total (in cents)
+      // Build Stripe line items & compute subtotal (in cents)
       let totalCents = 0;
       const line_items = products.map((p) => {
         const db = byId.get(String(p._id));
@@ -119,6 +117,27 @@ export const orderResolvers = {
         };
       });
 
+      // Add flat fees as separate line items
+      line_items.push(
+        {
+          price_data: {
+            currency: "sgd",
+            product_data: { name: "Shipping Fee" },
+            unit_amount: SHIPPING_FEE_CENTS,
+          },
+          quantity: 1,
+        },
+        {
+          price_data: {
+            currency: "sgd",
+            product_data: { name: "GST" },
+            unit_amount: GST_FEE_CENTS,
+          },
+          quantity: 1,
+        }
+      );
+      totalCents += SHIPPING_FEE_CENTS + GST_FEE_CENTS;
+
       // Optional coupon (must be active & not redeemed)
       let discounts = [];
       const normalizedCode = couponCode?.trim().toUpperCase() || "";
@@ -134,6 +153,8 @@ export const orderResolvers = {
           try {
             const couponId = await getOrCreateStripePercentCoupon(coupon.discountPercentage);
             discounts = [{ coupon: couponId }];
+            // NOTE: Stripe percent discounts apply to the session's amount_subtotal.
+            // If you don't want discounts applied to fees, use shipping_options/tax rates instead of fee line items.
           } catch (err) {
             serverErr("Payment session error (coupon)", err?.message || String(err));
           }
@@ -154,7 +175,11 @@ export const orderResolvers = {
           metadata: {
             userId: String(user._id),
             couponCode: normalizedCode || "",
+            // store product ids/qty so we can reconcile later
             products: JSON.stringify(products.map((p) => ({ id: p._id, quantity: p.quantity }))),
+            // helpful fee metadata
+            shippingFee: (SHIPPING_FEE_CENTS / 100).toFixed(2),
+            gst: (GST_FEE_CENTS / 100).toFixed(2),
           },
         });
       } catch (err) {
@@ -208,7 +233,7 @@ export const orderResolvers = {
         };
       }
 
-      // Rebuild items from Stripe + metadata
+      // Rebuild items from Stripe + metadata (exclude fee lines)
       let stripeItems;
       try {
         stripeItems = await stripe.checkout.sessions.listLineItems(sessionId, { limit: 100 });
@@ -216,13 +241,27 @@ export const orderResolvers = {
         serverErr("Unable to list line items", err?.message || String(err));
       }
 
+      // Extract fee amounts by description
+      const shippingLine = stripeItems.data.find((li) => li.description === "Shipping Fee");
+      const gstLine = stripeItems.data.find((li) => li.description === "GST");
+
+      const shippingFee = shippingLine ? +(shippingLine.amount_total / 100).toFixed(2) : 0;
+      const gst = gstLine ? +(gstLine.amount_total / 100).toFixed(2) : 0;
+
+      // Only product lines
+      const productLines = stripeItems.data.filter((li) => !FEE_NAMES.has(li.description));
+
+      // Re-map with original product ids/quantities from metadata
       const metaProducts = JSON.parse(session.metadata?.products || "[]");
-      const items = stripeItems.data
-        .map((it, idx) => {
+      const items = productLines
+        .map((li, idx) => {
           const pid = metaProducts[idx]?.id;
           if (!pid) return null;
-          const qty = it.quantity || 1;
-          const perUnit = it.amount_total / qty / 100; // after discounts
+          const qtyFromMeta = metaProducts[idx]?.quantity;
+          const qty = qtyFromMeta ?? li.quantity ?? 1;
+
+          // per-unit price after discounts
+          const perUnit = (li.amount_total / (li.quantity || qty)) / 100;
           return { product: pid, quantity: qty, price: +perUnit.toFixed(2) };
         })
         .filter(Boolean);
@@ -239,8 +278,8 @@ export const orderResolvers = {
         // Decrement stock (and optionally increment 'sold')
         for (const { product, quantity } of items) {
           const updated = await Product.findOneAndUpdate(
-            { _id: product, stock: { $gte: quantity } },         // guard
-            { $inc: { stock: -quantity, sold: quantity } },       // 'sold' optional in your schema
+            { _id: product, stock: { $gte: quantity } }, // guard
+            { $inc: { stock: -quantity, sold: quantity } }, // 'sold' optional
             { new: true, session: mongoSession }
           );
           if (!updated) {
@@ -250,13 +289,15 @@ export const orderResolvers = {
           }
         }
 
-        // Create order
+        // Create order (persist fees and Stripe total)
         const [doc] = await Order.create(
           [
             {
               user: user._id,
               products: items,
-              totalAmount: +(session.amount_total / 100).toFixed(2),
+              totalAmount: +(session.amount_total / 100).toFixed(2), // Stripe total (incl. fees/discounts)
+              shippingFee, // NEW
+              gst,         // NEW
               paymentMethod: "CARD",
               paymentStatus: session.payment_status, // "paid"
               stripeSessionId: sessionId,
