@@ -4,7 +4,7 @@ export const PRODUCT_MIN_FIELDS = gql`
     _id
     name
     image
-    price
+    
   }
 `;
 
