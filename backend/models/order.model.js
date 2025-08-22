@@ -57,6 +57,17 @@ const orderSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
+     // NEW: admin fulfillment
+    fulfillmentStatus: { 
+      type: String,
+      enum: ["pending","dispatched","delivered","cancelled"], 
+      default: "pending",
+      index: true 
+    },
+    
+    dispatchedAt: Date,
+    estimatedDeliveryDate: Date,
+  
   },
 
   { timestamps: true }

@@ -6,6 +6,7 @@ import {
   VERIFICATION_EMAIL_TEMPLATE,
   WELCOME_COUPON_TEMPLATE,
   ORDER_SUCCESS_TEMPLATE,
+  ORDER_DISPATCHED_TEMPLATE
 } from "./emailTemplates.js";
 import { mailtrapClient, sender } from "./mailtrap.config.js";
 
@@ -94,4 +95,35 @@ export async function sendOrderSuccessEmail(email, { name, orderId, total }) {
     category: "Order",
   });
   return res;
+}
+
+export async function sendOrderDispatchedEmail(
+  email,
+  { name, orderId, etaDate, items = [] } // items = [{ name, image, quantity }]
+) {
+  const rows = items.map(it => `
+    <tr>
+      <td style="padding:8px;border-bottom:1px solid #eee;">
+        <img src="${it.image || ""}" alt="${it.name || "Product"}"
+             width="48" height="48"
+             style="display:block;border-radius:4px;object-fit:cover;" />
+      </td>
+      <td style="padding:8px;border-bottom:1px solid #eee;">${it.name || "Product"}</td>
+      <td style="padding:8px;text-align:center;border-bottom:1px solid #eee;">${it.quantity ?? 1}</td>
+    </tr>
+  `).join("");
+
+  const html = ORDER_DISPATCHED_TEMPLATE
+    .replace("{name}", name || "there")
+    .replace("{orderId}", orderId)
+    .replace("{etaDate}", etaDate)
+    .replace("{items}", rows);
+
+  return mailtrapClient.send({
+    from: sender,
+    to: [{ email }],
+    subject: "Your order is on the way 🚚",
+    html,
+    category: "Order",
+  });
 }

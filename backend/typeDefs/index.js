@@ -1,5 +1,5 @@
 import { mergeTypeDefs } from "@graphql-tools/merge";
-
+import orderAdmintypeDef from "./orderAdmin.typeDef.js";
 import userTypeDef from "./user.typeDef.js";
 import authTypeDef from "./auth.typeDef.js";
 import analyticsTypeDef from "./analytics.typeDef.js";
@@ -16,6 +16,7 @@ const mergedTypeDefs = mergeTypeDefs([
   couponTypeDef,
   orderTypeDef,
   productTypeDef,
+  orderAdmintypeDef
 ]);
 
 export default mergedTypeDefs;

@@ -6,7 +6,7 @@ import cartResolver from "./cart.resolver.js";
 import couponResolver from "./coupon.resolver.js";
 import orderResolver from "./order.resolver.js";
 import productResolver from "./product.resolver.js";
-
+import adminOrderResolvers from "./adminOrder.resolver.js";
 const mergedResolvers = mergeResolvers([
   authResolver,
   userResolver,
@@ -15,6 +15,7 @@ const mergedResolvers = mergeResolvers([
   cartResolver,
   couponResolver,
   analyticsResolver,
+  adminOrderResolvers
 ]);
 
 export default mergedResolvers;

@@ -15,6 +15,7 @@ import PurchaseSuccess from "./pages/PurchaseSuccess.jsx";
 import OrdersPage from "./pages/OrdersPage.jsx";
 import AnalyticsTab from "./components/AnalyticsTab.jsx";
 import ProductAnalysisPage from "./pages/admin/ProductAnalysisPage.jsx";
+import AdminOrdersPage from "./pages/admin/AdminOrdersPage.jsx";
 function App() {
   return (
     <>
@@ -55,6 +56,14 @@ function App() {
             </AdminRoute>
           }
         />
+        <Route
+        path="/admin/orders"
+        element={
+          <AdminRoute>
+            <AdminOrdersPage />
+          </AdminRoute>
+        }
+      />
         {/* optional: catch-all */}
         {/* <Route path="*" element={<HomePage />} /> */}
       </Routes>

@@ -148,3 +148,43 @@ export const ORDER_SUCCESS_TEMPLATE = `
 </body>
 </html>
 `;
+
+// emailTemplates.js
+export const ORDER_DISPATCHED_TEMPLATE = `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Order Dispatched</title></head>
+<body style="font-family:Arial,sans-serif;line-height:1.6;color:#333;max-width:600px;margin:0 auto;padding:20px;">
+  <div style="background:#4CAF50;padding:16px;text-align:center;color:#fff;">
+    <h1 style="margin:0;">Your order is on the way 🚚</h1>
+  </div>
+
+  <div style="background:#f9f9f9;padding:20px;border-radius:0 0 6px 6px;">
+    <p>Hi {name},</p>
+    <p>Your order <b>#{orderId}</b> has been dispatched.</p>
+    <p>Estimated delivery: <b>{etaDate}</b></p>
+
+    <h3 style="margin-top:24px;margin-bottom:8px;">Items</h3>
+    <table style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th style="text-align:left;border-bottom:1px solid #eee;padding:8px;">Item</th>
+          <th style="text-align:left;border-bottom:1px solid #eee;padding:8px;">Name</th>
+          <th style="text-align:center;border-bottom:1px solid #eee;padding:8px;">Qty</th>
+        </tr>
+      </thead>
+      <tbody>
+        {items}
+      </tbody>
+    </table>
+
+    <p style="margin-top:24px;">Thanks for shopping with us!</p>
+    <p>— Mini Cart Team</p>
+  </div>
+
+  <div style="text-align:center;margin-top:12px;color:#888;font-size:12px;">
+    This is an automated message, please do not reply.
+  </div>
+</body>
+</html>
+`;

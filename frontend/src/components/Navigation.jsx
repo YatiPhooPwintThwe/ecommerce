@@ -1,4 +1,3 @@
-// src/components/Navigation.jsx
 import { Link, useNavigate } from "react-router-dom";
 import { ShoppingCart, User, LogOut, Package } from "lucide-react";
 import toast from "react-hot-toast";
@@ -9,13 +8,8 @@ import miniteen from "../assets/miniteen.png";
 export default function Navigation() {
   const navigate = useNavigate();
 
-  const { data } = useQuery(GET_CART_PRODUCTS, {
-    fetchPolicy: "cache-and-network",
-  });
-  const cartCount = (data?.cartProducts ?? []).reduce(
-    (a, i) => a + (i.quantity || 0),
-    0
-  );
+  const { data } = useQuery(GET_CART_PRODUCTS, { fetchPolicy: "cache-and-network" });
+  const cartCount = (data?.cartProducts ?? []).reduce((a, i) => a + (i.quantity || 0), 0);
 
   const goCart = () => navigate("/cart");
   const goOrders = () => navigate("/orders");
@@ -27,29 +21,27 @@ export default function Navigation() {
 
   return (
     <header className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b">
-      <div className="h-16 sm:h-20 flex items-center">
-        {/* Logo */}
-        <Link
-          to="/"
-          className="h-full pl-0 pr-3 flex items-center"
-          aria-label="Home"
-        >
+      {/* container + responsive height + space-between to avoid overlap */}
+      <div className="mx-auto max-w-6xl px-3 sm:px-4 h-14 sm:h-20 flex items-center justify-between">
+        {/* Brand */}
+        <Link to="/" className="flex items-center min-w-0" aria-label="Home">
           <img
             src={miniteen}
             alt="MiniCart mascots"
-            className="h-full w-auto object-contain"
+            className="h-8 w-auto object-contain sm:h-12"
           />
-          <span className="ml-3 text-2xl sm:text-[28px] font-extrabold tracking-tight text-black">
+          {/* Hide brand text on small screens to save space */}
+          <span className="ml-2 hidden sm:inline text-[28px] font-extrabold tracking-tight text-black">
             MiniCart
           </span>
         </Link>
 
         {/* Right controls */}
-        <div className="ml-auto pr-4 flex items-center gap-6">
+        <div className="flex items-center gap-2 sm:gap-6 shrink-0">
           {/* Orders */}
           <button
             onClick={goOrders}
-            className="relative inline-flex items-center justify-center rounded-md border px-3 py-2 hover:bg-gray-50"
+            className="relative inline-flex items-center justify-center rounded-md border px-2.5 py-1.5 sm:px-3 sm:py-2 hover:bg-gray-50"
             aria-label="View Orders"
             title="Orders"
           >
@@ -59,7 +51,7 @@ export default function Navigation() {
           {/* Cart */}
           <button
             onClick={goCart}
-            className="relative inline-flex items-center justify-center rounded-md border px-3 py-2 hover:bg-gray-50"
+            className="relative inline-flex items-center justify-center rounded-md border px-2.5 py-1.5 sm:px-3 sm:py-2 hover:bg-gray-50"
             aria-label="Open cart"
             title="Cart"
           >
@@ -71,23 +63,24 @@ export default function Navigation() {
             )}
           </button>
 
-          {/* User → Update Info (no dropdown) */}
+          {/* Account */}
           <button
             onClick={goUpdateInfo}
-            className="inline-flex items-center justify-center rounded-md border px-3 py-2 hover:bg-gray-50"
+            className="inline-flex items-center justify-center rounded-md border px-2.5 py-1.5 sm:px-3 sm:py-2 hover:bg-gray-50"
             aria-label="Account & Settings"
             title="Account"
           >
             <User className="h-5 w-5" />
           </button>
 
-          {/* Logout */}
+          {/* Logout (icon-only on mobile) */}
           <button
             onClick={handleLogout}
-            className="inline-flex items-center gap-2 rounded-md border border-pink-300 px-3 py-2 text-sm hover:bg-pink-50"
+            className="inline-flex items-center gap-2 rounded-md border border-pink-300 px-2.5 py-1.5 sm:px-3 sm:py-2 text-sm hover:bg-pink-50"
+            title="Logout"
           >
             <LogOut className="h-4 w-4" />
-            Logout
+            <span className="hidden sm:inline">Logout</span>
           </button>
         </div>
       </div>

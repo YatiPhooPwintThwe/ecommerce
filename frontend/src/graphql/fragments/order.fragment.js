@@ -27,6 +27,9 @@ export const ORDER_FIELDS = gql`
     paymentStatus
     paymentMethod
     createdAt
+    fulfillmentStatus
+    dispatchedAt
+    estimatedDeliveryDate
     products {
       ...OrderProductFields
     }
@@ -35,6 +38,8 @@ export const ORDER_FIELDS = gql`
       _id
       name
       email
+      address { postalCode country }
     }
   }
 `;
+

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@apollo/client";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Plus, Edit3, Trash2, LayoutDashboard, LogOut } from "lucide-react";
+import { Plus, Edit3, Trash2, LayoutDashboard, Package, LogOut } from "lucide-react";
 import { GET_PRODUCTS } from "../../graphql/query/product.query.js";
 import {
   CREATE_PRODUCT,
@@ -236,6 +236,14 @@ export default function ProductPage() {
             >
               <LayoutDashboard className="h-4 w-4" />
               Dashboard
+            </Link>
+            
+            <Link
+              to="/admin/orders"
+              className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
+            >
+              <Package className="h-4 w-4" />
+              Orders
             </Link>
             <button
               onClick={openCreate}
