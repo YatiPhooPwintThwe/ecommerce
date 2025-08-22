@@ -31,6 +31,7 @@ export default function GiftCouponCard({ onChanged }) {
         data: {
           myCoupon: {
             __typename: "Coupon",
+
             _id: existing?._id ?? "temp",
             code: r.code,
             discountPercentage: r.discountPercentage,
