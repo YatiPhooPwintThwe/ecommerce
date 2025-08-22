@@ -3,11 +3,13 @@ import { GET_ADMIN_ORDERS } from "../../graphql/query/adminOrder.query.js";
 import { DISPATCH_ORDER } from "../../graphql/mutation/adminOrder.mutation.js";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const sgd = (n) =>
   new Intl.NumberFormat("en-SG", { style: "currency", currency: "SGD" }).format(Number(n || 0));
 
 export default function AdminOrdersPage() {
+  const navigate = useNavigate();
   const { data, loading, error, refetch } = useQuery(GET_ADMIN_ORDERS, {
     fetchPolicy: "network-only",
   });
@@ -73,7 +75,7 @@ export default function AdminOrdersPage() {
   return (
     <div className="mx-auto max-w-5xl p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Admin · Orders</h1>
+        <h1 className="text-xl font-semibold">Orders</h1>
         <div className="flex items-center gap-2">
           <label className="text-sm text-gray-600">ETA (days)</label>
           <input
@@ -157,6 +159,14 @@ export default function AdminOrdersPage() {
           })}
         </div>
       )}
+      <div className="pt-8">
+        <button
+          onClick={() => navigate("/admin/products")}
+          className="px-6 py-2 bg-blue-400 text-white rounded-lg hover:bg-blue-500 text-sm shadow"
+        >
+          Back 
+        </button>
+      </div>
     </div>
   );
 }
