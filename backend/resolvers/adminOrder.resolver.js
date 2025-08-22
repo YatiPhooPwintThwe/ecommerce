@@ -12,10 +12,12 @@ export const adminOrderResolvers = {
     adminOrders: async (_p, _a, ctx) => {
       const user = await ctx.getUser();
       if (!user || user.role !== "ADMIN") forbid();
-      return Order.find({})
+      const orders = await Order.find({})
         .sort({ createdAt: -1 })
         .populate({ path: "user", select: "name email address.postalCode address.country" })
-        .populate({ path: "products.product", select: "name image price" });
+        .populate({ path: "products.product", select: "name image price" })
+        .lean();
+        return orders.filter(o => o.user);
     },
   },
 
