@@ -18,7 +18,7 @@ const orderTypeDef = `#graphql
    type Order {
    
      _id: ID!
-     user: User!
+     user: User
      products: [OrderProduct!]!
      totalAmount: Float!
      paymentMethod: PaymentMethod
