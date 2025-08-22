@@ -39,6 +39,17 @@ const orderSchema = new mongoose.Schema(
       min: [0, "Total amount must be a positive number"],
     },
 
+    shippingFee: { 
+      type: Number,
+      default: 2 
+    
+    },
+        // always $2
+    gst: {
+       type: Number,
+       default: 1 
+    
+    }, 
 
     paymentMethod: {
       type: String,

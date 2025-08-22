@@ -26,6 +26,8 @@ export const ORDER_FIELDS = gql`
     totalAmount
     paymentStatus
     paymentMethod
+    shippingFee
+    gst
     createdAt
     fulfillmentStatus
     dispatchedAt

@@ -21,6 +21,8 @@ const orderTypeDef = `#graphql
      user: User
      products: [OrderProduct!]!
      totalAmount: Float!
+     shippingFee: Float      
+     gst: Float 
      paymentMethod: PaymentMethod
      paymentStatus: String!
      stripeSessionId: String!
