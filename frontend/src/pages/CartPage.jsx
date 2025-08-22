@@ -65,7 +65,10 @@ export default function CartPage() {
 
   const discountPct = coupon?.discountPercentage || 0;
   const savings = subtotal * (discountPct / 100);
-  const total = subtotal - savings;
+  // NEW: flat fees shown in the summary
+  const delivery = 2;
+  const gst = 1;
+  const total = subtotal - savings + delivery + gst;
 
   //  Make this async and put the mutation call inside
   const handleCheckout = async () => {
@@ -150,6 +153,8 @@ export default function CartPage() {
               <OrderSummary
                 subtotal={subtotal}
                 savings={savings}
+                delivery={delivery}
+                gst={gst}
                 total={total}
                 format={sgd}
                 onCheckout={handleCheckout}
