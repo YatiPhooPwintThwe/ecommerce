@@ -8,8 +8,13 @@ import miniteen from "../assets/miniteen.png";
 export default function Navigation() {
   const navigate = useNavigate();
 
-  const { data } = useQuery(GET_CART_PRODUCTS, { fetchPolicy: "cache-and-network" });
-  const cartCount = (data?.cartProducts ?? []).reduce((a, i) => a + (i.quantity || 0), 0);
+  const { data } = useQuery(GET_CART_PRODUCTS, {
+    fetchPolicy: "cache-and-network",
+  });
+  const cartCount = (data?.cartProducts ?? []).reduce(
+    (a, i) => a + (i.quantity || 0),
+    0
+  );
 
   const goCart = () => navigate("/cart");
   const goOrders = () => navigate("/orders");
@@ -30,9 +35,9 @@ export default function Navigation() {
             alt="MiniCart mascots"
             className="h-8 w-auto object-contain sm:h-12"
           />
-          {/* Hide brand text on small screens to save space */}
-          <span className="ml-2 hidden sm:inline text-[28px] font-extrabold tracking-tight text-black">
-            MiniCart
+
+          <span className="ml-2 text-xs font-bold tracking-tight text-black sm:text-[28px] sm:font-extrabold">
+            Mini Cart
           </span>
         </Link>
 
