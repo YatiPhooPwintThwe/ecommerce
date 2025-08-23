@@ -6,7 +6,9 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
 const sgd = (n) =>
-  new Intl.NumberFormat("en-SG", { style: "currency", currency: "SGD" }).format(Number(n || 0));
+  new Intl.NumberFormat("en-SG", { style: "currency", currency: "SGD" }).format(
+    Number(n || 0)
+  );
 
 const formatDate = (dateString) => {
   if (!dateString) return "Date not available";
@@ -41,7 +43,9 @@ export default function AdminOrdersPage() {
           _id: orderId,
           fulfillmentStatus: "dispatched",
           dispatchedAt: new Date().toISOString(),
-          estimatedDeliveryDate: new Date(Date.now() + (etaDays ?? 7) * 86400000).toISOString(),
+          estimatedDeliveryDate: new Date(
+            Date.now() + (etaDays ?? 7) * 86400000
+          ).toISOString(),
         },
       },
     }),
@@ -98,7 +102,9 @@ export default function AdminOrdersPage() {
       </div>
 
       {orders.length === 0 ? (
-        <div className="rounded-lg border bg-white p-6 text-gray-600">No orders yet.</div>
+        <div className="rounded-lg border bg-white p-6 text-gray-600">
+          No orders yet.
+        </div>
       ) : (
         <div className="space-y-6">
           {orders.map((o) => {
@@ -106,15 +112,20 @@ export default function AdminOrdersPage() {
             const isDispatched = o.fulfillmentStatus === "dispatched";
 
             return (
-              <div key={o._id} className="rounded-lg border bg-white p-5 shadow-sm">
+              <div
+                key={o._id}
+                className="rounded-lg border bg-white p-5 shadow-sm"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="font-semibold">Order #{o._id.slice(-6)}</div>
                   {/* header right timestamp */}
-                  <div className="text-sm text-gray-500">{formatDate(o.createdAt)}</div>
+                  <div className="text-sm text-gray-500">
+                    {formatDate(o.createdAt)}
+                  </div>
                 </div>
 
                 {/* details */}
-                <div className="mt-2 text-sm text-gray-700">
+                <div className="mt-3 text-sm leading-7 text-gray-700 space-y-2">
                   <div>
                     User: {o.user?.name} · {o.user?.email}
                   </div>
@@ -136,7 +147,10 @@ export default function AdminOrdersPage() {
 
                 <div className="mt-4 divide-y">
                   {o.products.map((it, i) => (
-                    <div key={i} className="flex items-center justify-between py-2">
+                    <div
+                      key={i}
+                      className="flex items-center justify-between py-2"
+                    >
                       <div className="flex items-center gap-3">
                         {it.product?.image && (
                           <img
@@ -146,7 +160,9 @@ export default function AdminOrdersPage() {
                           />
                         )}
                         <div className="font-medium">{it.product?.name}</div>
-                        <div className="text-sm text-gray-500">× {it.quantity}</div>
+                        <div className="text-sm text-gray-500">
+                          × {it.quantity}
+                        </div>
                       </div>
                       <div className="text-sm">
                         {sgd((it.price || 0) * (it.quantity || 0))}
@@ -160,13 +176,19 @@ export default function AdminOrdersPage() {
                     {o.paymentMethod} · {o.paymentStatus}
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="text-base font-semibold">{sgd(o.totalAmount)}</div>
+                    <div className="text-base font-semibold">
+                      {sgd(o.totalAmount)}
+                    </div>
                     <button
                       onClick={() => handleDispatch(o._id)}
                       disabled={saving || !isPending}
                       className="rounded-md bg-blue-500 px-4 py-2 text-white disabled:opacity-50"
                     >
-                      {isDispatched ? "Dispatched" : isPending ? "Dispatch" : "Not Dispatchable"}
+                      {isDispatched
+                        ? "Dispatched"
+                        : isPending
+                        ? "Dispatch"
+                        : "Not Dispatchable"}
                     </button>
                   </div>
                 </div>
