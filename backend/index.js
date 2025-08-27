@@ -13,7 +13,7 @@ import { buildContext } from "graphql-passport";
 import MongoStore from "connect-mongo";
 import path from "path";
 import { fileURLToPath } from "url";
-
+import helmet from "helmet"; 
 
 // app modules
 import { connectDB } from "./lib/connectDB.js";
@@ -25,12 +25,9 @@ import { createDefaultAdmin } from "./admin/createDefaultAdmin.js";
 dotenv.config();
 await connectDB();
 
-
-
 const isProd = process.env.NODE_ENV === "production";
 const PORT = process.env.PORT || 4000; // Render provides PORT
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:3000";
-
 
 if (!process.env.MONGODB_URI) throw new Error("Missing MONGODB_URI");
 if (!process.env.SESSION_SECRET) throw new Error("Missing SESSION_SECRET");
@@ -42,16 +39,42 @@ const httpServer = http.createServer(app);
 // when behind Render's proxy and using secure cookies
 if (isProd) app.set("trust proxy", 1);
 
+// ---------- Security headers (Helmet) ----------
+app.disable("x-powered-by");
 
-const allowedOrigins = isProd ? true : [CLIENT_URL, "http://localhost:5173"];
+// Minimal, safe Helmet configuration (no CSP to avoid breaking SPA)
+app.use(
+  helmet({
+    contentSecurityPolicy: false,        // keep off unless you’ve audited inline scripts/styles
+    crossOriginEmbedderPolicy: false,    // typical for SPAs that embed data URIs/images
+  })
+);
+
+// Extra-strong HSTS only in prod (HTTPS)
+if (isProd) {
+  app.use(
+    helmet.hsts({
+      maxAge: 15552000, // 180 days
+      includeSubDomains: true,
+      preload: false,
+    })
+  );
+}
+
+// ---------- CORS ----------
+const allowedOrigins = isProd ? [CLIENT_URL] : [CLIENT_URL, "http://localhost:5173"];
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: (origin, cb) => {
+      // allow same-origin or no-origin (curl/health checks)
+      if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+      cb(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );
 
-
+// ---------- Sessions ----------
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
@@ -90,20 +113,21 @@ const server = new ApolloServer({
 await server.start();
 await createDefaultAdmin(); // will create/update admin on boot
 
-// Larger body limits (e.g., base64 images)
+// Body limits (trim in prod to reduce DoS/memory pressure)
+const BODY_LIMIT = isProd ? "5mb" : "15mb";
+
 app.use(
   "/graphql",
-  express.json({ limit: "15mb" }),
-  express.urlencoded({ extended: true, limit: "15mb" }),
+  express.json({ limit: BODY_LIMIT }),
+  express.urlencoded({ extended: true, limit: BODY_LIMIT }),
   expressMiddleware(server, {
     context: async ({ req, res }) => buildContext({ req, res }),
   })
 );
 
-
+// ------------------ static (frontend) ------------------
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 
 const distDir = path.resolve(__dirname, "../frontend/dist");
 
@@ -115,11 +139,9 @@ if (isProd) {
   });
 }
 
-
+// ------------------ start ------------------
 await new Promise((resolve) => httpServer.listen({ port: PORT }, resolve));
-
 
 console.log(`NODE_ENV   : ${process.env.NODE_ENV || "(not set)"}`);
 console.log(`GraphQL    : http://localhost:${PORT}/graphql`);
 console.log(`Serving    : ${isProd ? distDir : "development (no static)"} `);
-
