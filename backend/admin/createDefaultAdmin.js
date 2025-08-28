@@ -21,26 +21,26 @@ export const createDefaultAdmin = async () => {
       admin = new User({
         name: "admin",
         email,
-        password: plain, // plain here; pre-save will hash
+        password: plain, 
         role: "ADMIN",
         isVerified: true,
       });
       await admin.save();
-      console.log("✅ Default admin created:", email);
-      return; // important: stop here
+      console.log("Default admin created:", email);
+      return; 
     }
 
     // Update password only if different from env
     const same = await bcrypt.compare(plain, admin.password);
     if (!same) {
-      admin.password = plain; // pre-save will re-hash
+      admin.password = plain; 
       await admin.save();
-      console.log("🔁 Admin password updated from env.");
+      console.log("Admin password updated from env.");
     } else {
-      console.log("ℹ️ Admin password already up to date.");
+      console.log("ℹAdmin password already up to date.");
     }
   } catch (err) {
-    console.error("❌ createDefaultAdmin error:", err.message);
+    console.error("createDefaultAdmin error:", err.message);
   }
 };
 
