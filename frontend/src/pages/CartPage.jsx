@@ -158,7 +158,7 @@ export default function CartPage() {
                 total={total}
                 format={sgd}
                 onCheckout={handleCheckout}
-                loading={checkoutLoading} // ⬅️ now triggers the mutation + redirect
+                loading={checkoutLoading} 
               />
               <div className="mt-2">
                 <GiftCouponCard onChanged={() => refetchCoupon()} />
