@@ -26,7 +26,7 @@ const couponSchema = new mongoose.Schema(
     redeemed: { 
       type: Boolean,
       default: false 
-    }, // ✅ track one-time usage
+    }, 
 
     redeemedAt: { 
       type: Date 
